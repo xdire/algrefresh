@@ -1,0 +1,50 @@
+<input> 5 30
+; ---------
+; PRELOAD
+; ---------
+READ 1		; Store val 1 R[1]
+READ 2		; Store val 2 R[2]
+LOAD =0		; Place zero in r[0]
+STORE 3		; Store zero in r[3]
+LOAD 1		; Load val 1 R[0]
+SUB 2		; Subtract val 2 R[0] - R[2]
+JGTZ prepare	; Go to preparation if positive
+; ---------
+; DO SWAP
+; ---------
+LOAD 2   		; Load r[2] -> r[0]
+STORE 3		; Use addiotonal reg: Store r[0] -> r[3]
+LOAD 1		; Load r[1] -> r[0]
+STORE 2		; Swap 1: Store r[0] -> r[2]
+LOAD 3 		; Load r[3] -> r[0]
+STORE 1		; Swap 2: Store r[0] -> r[1]
+
+; ---------
+; PREPARE
+; ---------
+prepare:
+LOAD 2		; Load second value in r[0]
+STORE 3		; Store as a summary of loops
+LOAD =0		; Nullify r[0]
+STORE 2		; Store in 2nd
+; ---------
+; CALCULATE
+; ---------
+calcloop: 
+LOAD 3		; value of r[3] to r[0]
+JZ finish		; end if zero
+
+LOAD 2		; Load value r[2] -> r[0]
+ADD 1		; Multiply once
+STORE 2		; Store in r[2]
+
+LOAD 3
+SUB =1		; Decrease
+STORE 3		; Store at 3
+JMP calcloop
+; ---------
+; EXIT
+; ---------
+finish:
+WRITE 2
+HALT
