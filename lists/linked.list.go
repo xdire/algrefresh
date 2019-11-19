@@ -1,6 +1,7 @@
 package lists
 
 import (
+	"errors"
 	"reflect"
 )
 
@@ -52,66 +53,25 @@ func (l *LinkedList) Add(item interface{}) {
 	l.size++
 }
 
-func (l *LinkedList) Get(index uint32, receiver interface{}) {
-	if l.head == nil || index > l.size - 1 {
-		panic("linked list index request is out of boundaries")
-	}
-	counter := uint32(0)
-	next := l.head
-	for counter != index {
-		next = next.next
-		counter++
-	}
-	if l.genericIsPointer && receiver != nil  {
-		reflect.ValueOf(receiver).Elem().Set(reflect.ValueOf(next.data).Elem())
-	} else if receiver != nil  {
-		reflect.ValueOf(receiver).Elem().Set(reflect.ValueOf(next.data))
+func (l *LinkedList) Get(index uint32) (interface{}, error) {
+	return l.getter(index, nil)
+}
+
+func (l *LinkedList) Remove(index uint32) (interface{}, error) {
+	return l.remover(index, nil)
+}
+
+func (l *LinkedList) GetValue(index uint32, receiver interface{}) {
+	_, err := l.getter(index, receiver)
+	if err != nil {
+		panic(err)
 	}
 }
 
-func (l *LinkedList) Remove(index uint32, receiver interface{}) {
-	if l.head == nil || index > l.size - 1 {
-		panic("linked list index remove request is out of boundaries")
-	}
-	prev := l.head
-	next := l.head
-	// Check if index is zero, for that situation just replace
-	// head with the next element from the head
-	if index == 0 {
-		next = l.head
-		l.head = l.head.next
-	} else {
-	// If index is greater than zero we need to search until the index
-	// and when found link previous element to the current next element
-		counter := uint32(0)
-		for counter != index {
-			prev = next
-			next = next.next
-			counter++
-		}
-		prev.next = next.next
-	}
-	// Provide the value back to requester
-	if l.genericIsPointer && receiver != nil  {
-		reflect.ValueOf(receiver).Elem().Set(reflect.ValueOf(next.data).Elem())
-	} else if receiver != nil  {
-		reflect.ValueOf(receiver).Elem().Set(reflect.ValueOf(next.data))
-	}
-	// If deleted value was actual tail then replace tail with
-	// previous element (obviously tail was deleted)
-	if next == l.tail {
-		l.tail = prev
-	}
-	// Decrement size
-	l.size--
-	// If size equals to 1 then Head will turn into Tail
-	if l.size == 1 {
-		l.head = l.tail
-	}
-	// If last element gone then reset the head and tail
-	if l.size == 0 {
-		l.head = nil
-		l.tail = nil
+func (l *LinkedList) RemoveValue(index uint32, receiver interface{}) {
+	_, err := l.remover(index, receiver)
+	if err != nil {
+		panic(err)
 	}
 }
 
@@ -136,3 +96,70 @@ func (l *LinkedList) AddAtIndex(index uint32, item interface{}) {
 	}
 	l.size++
 }
+
+func (l *LinkedList) getter(index uint32, receiver interface{})  (interface{}, error) {
+	if l.head == nil || index > l.size - 1 {
+		return nil, errors.New("index out of boundaries")
+	}
+	counter := uint32(0)
+	next := l.head
+	for counter != index {
+		next = next.next
+		counter++
+	}
+	if receiver != nil && l.genericIsPointer {
+		reflect.ValueOf(receiver).Elem().Set(reflect.ValueOf(next.data).Elem())
+	} else if receiver != nil  {
+		reflect.ValueOf(receiver).Elem().Set(reflect.ValueOf(next.data))
+	}
+	return next.data, nil
+}
+
+func (l *LinkedList) remover(index uint32, receiver interface{})  (interface{}, error) {
+	if l.head == nil || index > l.size - 1 {
+		return nil, errors.New("index out of boundaries")
+	}
+	prev := l.head
+	next := l.head
+	// Check if index is zero, for that situation just replace
+	// head with the next element from the head
+	if index == 0 {
+		next = l.head
+		l.head = l.head.next
+	} else {
+		// If index is greater than zero we need to search until the index
+		// and when found link previous element to the current next element
+		counter := uint32(0)
+		for counter != index {
+			prev = next
+			next = next.next
+			counter++
+		}
+		prev.next = next.next
+	}
+	// Provide the value back to requester
+	if receiver != nil && l.genericIsPointer  {
+		reflect.ValueOf(receiver).Elem().Set(reflect.ValueOf(next.data).Elem())
+	} else if receiver != nil  {
+		reflect.ValueOf(receiver).Elem().Set(reflect.ValueOf(next.data))
+	}
+	// If deleted value was actual tail then replace tail with
+	// previous element (obviously tail was deleted)
+	if next == l.tail {
+		l.tail = prev
+	}
+	// Decrement size
+	l.size--
+	// If size equals to 1 then Head will turn into Tail
+	if l.size == 1 {
+		l.head = l.tail
+	}
+	// If last element gone then reset the head and tail
+	if l.size == 0 {
+		l.head = nil
+		l.tail = nil
+	}
+	return next.data, nil
+}
+
+
