@@ -86,7 +86,6 @@ func CombinePattern(files []File, pattern CompiledPattern) map[string]*Combinati
 	combs := make(map[string]*Combination)
 	for _, v := range files {
 		res := pattern.Pattern().FindStringSubmatch(v.Info.Name())
-		fmt.Printf("\n%+v", res)
 		if res != nil {
 			str := ""
 			suffix := ""
